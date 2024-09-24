@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "GearsOfJusticeCharacter.generated.h"
+#include "GOJCharacter.generated.h"
 
 UCLASS(Blueprintable)
 class AGearsOfJusticeCharacter : public ACharacter

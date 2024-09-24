@@ -1,8 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "GearsOfJusticeGameMode.h"
-#include "GearsOfJusticePlayerController.h"
-#include "GearsOfJusticeCharacter.h"
+#include "GOJGameMode.h"
+#include "GOJPlayerController.h"
+#include "GOJCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
 AGearsOfJusticeGameMode::AGearsOfJusticeGameMode()

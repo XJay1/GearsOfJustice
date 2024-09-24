@@ -9,5 +9,12 @@ public class GearsOfJustice : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "NavigationSystem", "AIModule", "Niagara", "EnhancedInput" });
-    }
+		PublicIncludePaths.AddRange(new string[]
+		{
+			"GearsOfJustice/Public",
+            "GearsOfJustice/Public/Menu",
+            "GearsOfJustice/Public/Menu/UI"
+        });
+	
+	}
 }

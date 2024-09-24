@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "GearsOfJusticeGameMode.generated.h"
+#include "GOJGameMode.generated.h"
 
 UCLASS(minimalapi)
 class AGearsOfJusticeGameMode : public AGameModeBase
