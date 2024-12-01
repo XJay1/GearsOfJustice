@@ -26,14 +26,53 @@ protected:
 
     void TurnAround(float AxisValue);
 
+    void MoveCharacter(float AxisValue, EAxis::Type Axis);
+    void PlayAttackAnimation(UAnimMontage* Animation);
+    void StopBlocking(UAnimMontage* Animation);
+    void StartBlocking(UAnimMontage* Animation);
+
+    void EasyPunch();
+    void Kick();
+    void StrongPunch();
+
+    FOnMontageEnded EndDelegate;
+
+
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     UCameraComponent* CameraComponent;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USpringArmComponent* SpringArmComponent;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* EasyPunchAnimation;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* KickAnimation;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* StrongPunchAnimation;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* BlockAnimMontage;
+
+    UFUNCTION(BlueprintCallable, Category = "Figting")
+    bool GetIsBlocking() const;
+
+
+
 public:
+    bool CanMakeHit = true;
+    bool CanWalk = true;
+    bool IsBlocking = false;
+
     virtual void Tick(float DeltaTime) override;
 
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+
+    void OnAnimationEnded(UAnimMontage* Montage, bool bInterrupted);
+
+    void OnStartBlocking();
+    void OnStopBlocking();
 };
