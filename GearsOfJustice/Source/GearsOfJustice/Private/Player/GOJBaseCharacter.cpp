@@ -4,7 +4,16 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/Controller.h"
+#include "Engine/DamageEvents.h"
+#include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
+#include "Components/GOJHealthComponent.h"
+#include "Components/TextRenderComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"  
+#include "Components/CapsuleComponent.h"               
+#include "GameFramework/Character.h"                   
 
 DEFINE_LOG_CATEGORY_STATIC(GOJBaseCharacterLog, All, All);
 
@@ -19,13 +28,32 @@ AGOJBaseCharacter::AGOJBaseCharacter()
     CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
     CameraComponent->SetupAttachment(SpringArmComponent);
 
+    HealthComponent = CreateDefaultSubobject<UGOJHealthComponent>("HealthComponent");
+
+    HealthTextComponent = CreateDefaultSubobject<UTextRenderComponent>("HealthTextComponent");
+    HealthTextComponent->SetupAttachment(RootComponent);
+    HealthTextComponent->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
+    HealthTextComponent->SetTextRenderColor(FColor::Blue);
+    HealthTextComponent->SetWorldSize(50.0f);
+
     EndDelegate.BindUObject(this, &AGOJBaseCharacter::OnAnimationEnded);
 }
 
 void AGOJBaseCharacter::BeginPlay()
 {
+    check(HealthComponent);
+
+    OnHealthChanged(HealthComponent->GetHealth(), 0.0f);
+    HealthComponent->OnHealthChanged.AddUObject(this, &AGOJBaseCharacter::OnHealthChanged);
+    HealthComponent->OnDeath.AddUObject(this, &AGOJBaseCharacter::OnDeath);
+
     Super::BeginPlay();
 }
+
+void AGOJBaseCharacter::OnHealthChanged(float Health, float HealthDelta)
+{
+    HealthTextComponent->SetText(FText::AsNumber(Health));
+ }
 
 bool AGOJBaseCharacter::GetIsBlocking() const
 {
@@ -127,6 +155,45 @@ void AGOJBaseCharacter::OnStopBlocking()
     StopBlocking(BlockAnimMontage);
 }
 
+void AGOJBaseCharacter::OnDeath()
+{
+    // TODO удалить персонажа
+
+    auto AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+    if (!AnimInstance)
+    {
+        UE_LOG(GOJBaseCharacterLog, Warning, TEXT("AnimInstance is missing or not set on the Mesh."));
+        return;
+    }
+
+    if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+    {
+        Movement->DisableMovement();
+    }
+
+    if (Controller)
+    {
+        Controller->SetIgnoreMoveInput(true);
+        Controller->SetIgnoreLookInput(true);
+    }
+
+    if (DieAnimMontage)
+    {
+        FOnMontageEnded MontageEndedDelegate;
+        MontageEndedDelegate.BindUObject(this, &AGOJBaseCharacter::OnDeathMontageEnded);
+        AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, DieAnimMontage);
+
+        AnimInstance->Montage_Play(DieAnimMontage);
+    }
+    else
+    {
+        UE_LOG(GOJBaseCharacterLog, Warning, TEXT("DieAnimMontage is not set! Removing character immediately."));
+        DestroyCharacter();
+    }
+}
+
+
+
 void AGOJBaseCharacter::StartBlocking(UAnimMontage* Animation)
 {
     if (!Animation || !GetMesh()) return;
@@ -157,4 +224,29 @@ void AGOJBaseCharacter::StopBlocking(UAnimMontage* Animation)
         UE_LOG(GOJBaseCharacterLog, Display, TEXT("Blocking animation stopped"));
         AnimInstance->Montage_Stop(0.2f, Animation);
     }
+}
+
+void AGOJBaseCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+    if (Montage == DieAnimMontage)
+    {
+        UE_LOG(GOJBaseCharacterLog, Display, TEXT("Death animation ended. Removing character."));
+        DestroyCharacter();
+    }
+}
+
+
+void AGOJBaseCharacter::DestroyCharacter()
+{
+    if (Controller)
+    {
+        Controller->SetIgnoreMoveInput(true);
+        Controller->SetIgnoreLookInput(true);
+
+        if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+        {
+            PlayerController->UnPossess();
+        }
+    }
+    Destroy();
 }

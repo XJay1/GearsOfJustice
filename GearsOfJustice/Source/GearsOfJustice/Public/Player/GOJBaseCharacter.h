@@ -8,6 +8,8 @@
 
 class UCameraComponent;
 class USpringArmComponent;
+class UGOJHealthComponent;
+class UTextRenderComponent;
 
 UCLASS()
 class GEARSOFJUSTICE_API AGOJBaseCharacter : public ACharacter
@@ -35,14 +37,21 @@ protected:
     void Kick();
     void StrongPunch();
 
-    FOnMontageEnded EndDelegate;
+    void OnHealthChanged(float Health, float HealthDelta);
 
+    FOnMontageEnded EndDelegate;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     UCameraComponent* CameraComponent;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USpringArmComponent* SpringArmComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+    UGOJHealthComponent* HealthComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+    UTextRenderComponent* HealthTextComponent;
 
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
     UAnimMontage* EasyPunchAnimation;
@@ -56,10 +65,11 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
     UAnimMontage* BlockAnimMontage;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    UAnimMontage* DieAnimMontage;
+
     UFUNCTION(BlueprintCallable, Category = "Figting")
     bool GetIsBlocking() const;
-
-
 
 public:
     bool CanMakeHit = true;
@@ -70,9 +80,14 @@ public:
 
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-
     void OnAnimationEnded(UAnimMontage* Montage, bool bInterrupted);
 
     void OnStartBlocking();
     void OnStopBlocking();
+    void OnDeath();
+
+    void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+    void DestroyCharacter();
+
+
 };
