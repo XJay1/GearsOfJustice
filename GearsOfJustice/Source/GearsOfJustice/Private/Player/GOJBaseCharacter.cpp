@@ -11,9 +11,11 @@
 #include "Components/GOJHealthComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"  
-#include "Components/CapsuleComponent.h"               
-#include "GameFramework/Character.h"                   
+#include "Components/GOJCombatComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/Character.h"
+#include "Components/GOJStaminaComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(GOJBaseCharacterLog, All, All);
 
@@ -30,30 +32,53 @@ AGOJBaseCharacter::AGOJBaseCharacter()
 
     HealthComponent = CreateDefaultSubobject<UGOJHealthComponent>("HealthComponent");
 
-    HealthTextComponent = CreateDefaultSubobject<UTextRenderComponent>("HealthTextComponent");
-    HealthTextComponent->SetupAttachment(RootComponent);
-    HealthTextComponent->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
-    HealthTextComponent->SetTextRenderColor(FColor::Blue);
-    HealthTextComponent->SetWorldSize(50.0f);
+    StaminaComponent = CreateDefaultSubobject<UGOJStaminaComponent>("StaminaComponent");
 
-    EndDelegate.BindUObject(this, &AGOJBaseCharacter::OnAnimationEnded);
+    CombatComponent = CreateDefaultSubobject<UGOJCombatComponent>("CombatComponent");
+
+    CharacterInfoTextComponent = CreateDefaultSubobject<UTextRenderComponent>("HealthTextComponent");
+    CharacterInfoTextComponent->SetupAttachment(RootComponent);
+    CharacterInfoTextComponent->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
+    CharacterInfoTextComponent->SetTextRenderColor(FColor::Blue);
+    CharacterInfoTextComponent->SetWorldSize(50.0f);
+
 }
 
 void AGOJBaseCharacter::BeginPlay()
 {
     check(HealthComponent);
+    check(StaminaComponent);
+    check(CombatComponent);
+    check(GetCharacterMovement());
+    check(GetMesh());
 
     OnHealthChanged(HealthComponent->GetHealth(), 0.0f);
+    OnStaminaChanged(StaminaComponent->GetStamina());
+
     HealthComponent->OnHealthChanged.AddUObject(this, &AGOJBaseCharacter::OnHealthChanged);
     HealthComponent->OnDeath.AddUObject(this, &AGOJBaseCharacter::OnDeath);
+
+
+    StaminaComponent->OnStaminaChangedDelegate.AddUObject(this, &AGOJBaseCharacter::OnStaminaChanged);
+
+    FOnDeadAnimationEnded.BindUObject(this, &AGOJBaseCharacter::OnDeathMontageEnded);
 
     Super::BeginPlay();
 }
 
 void AGOJBaseCharacter::OnHealthChanged(float Health, float HealthDelta)
 {
-    HealthTextComponent->SetText(FText::AsNumber(Health));
- }
+    FText StatusText = GetDevData(HealthComponent->GetHealth(), StaminaComponent->GetStamina());
+
+    CharacterInfoTextComponent->SetText(StatusText);
+}
+
+void AGOJBaseCharacter::OnStaminaChanged(float Stamina) 
+{
+    FText StatusText = GetDevData(HealthComponent->GetHealth(), StaminaComponent->GetStamina());
+
+    CharacterInfoTextComponent->SetText(StatusText);
+}
 
 bool AGOJBaseCharacter::GetIsBlocking() const
 {
@@ -108,47 +133,34 @@ void AGOJBaseCharacter::TurnAround(float AxisValue)
 
 void AGOJBaseCharacter::EasyPunch()
 {
-    PlayAttackAnimation(EasyPunchAnimation);
+    if (CombatComponent && CanMakeHit)
+    {
+        CombatComponent->PerformStrike(EStrikeType::Light);
+    }
 }
 
 void AGOJBaseCharacter::Kick()
 {
-    PlayAttackAnimation(KickAnimation);
-}
-
-
-void AGOJBaseCharacter::StrongPunch()
-{
-    PlayAttackAnimation(StrongPunchAnimation);
-}
-
-void AGOJBaseCharacter::PlayAttackAnimation(UAnimMontage* Animation)
-{
-    if (!CanWalk || !Animation || !GetMesh()) return;
-
-    CanMakeHit = false;
-    CanWalk = false;
-
-    auto AnimInstance = GetMesh()->GetAnimInstance();
-    if (AnimInstance)
+    if (CombatComponent && CanMakeHit)
     {
-        UE_LOG(GOJBaseCharacterLog, Display, TEXT("Playing attack animation: %s"), *Animation->GetName());
-        AnimInstance->Montage_Play(Animation);
-        AnimInstance->Montage_SetEndDelegate(EndDelegate, Animation);
+        CombatComponent->PerformStrike(EStrikeType::Kick);
     }
 }
 
-void AGOJBaseCharacter::OnAnimationEnded(UAnimMontage* Montage, bool bInterrupted)
+void AGOJBaseCharacter::StrongPunch()
 {
-    CanMakeHit = true;
-    CanWalk = true;
+    if (CombatComponent && CanMakeHit)
+    {
+        CombatComponent->PerformStrike(EStrikeType::Heavy);
+    }
 }
+
+
 
 void AGOJBaseCharacter::OnStartBlocking()
 {
     StartBlocking(BlockAnimMontage);
 }
-
 
 void AGOJBaseCharacter::OnStopBlocking()
 {
@@ -157,15 +169,7 @@ void AGOJBaseCharacter::OnStopBlocking()
 
 void AGOJBaseCharacter::OnDeath()
 {
-    // TODO удалить персонажа
-
-    auto AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-    if (!AnimInstance)
-    {
-        UE_LOG(GOJBaseCharacterLog, Warning, TEXT("AnimInstance is missing or not set on the Mesh."));
-        return;
-    }
-
+    // Блокируем движение и управление
     if (UCharacterMovementComponent* Movement = GetCharacterMovement())
     {
         Movement->DisableMovement();
@@ -177,22 +181,22 @@ void AGOJBaseCharacter::OnDeath()
         Controller->SetIgnoreLookInput(true);
     }
 
-    if (DieAnimMontage)
+    // Проверяем наличие анимации смерти
+    auto AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
+    if (DieAnimMontage && AnimInstance)
     {
         FOnMontageEnded MontageEndedDelegate;
-        MontageEndedDelegate.BindUObject(this, &AGOJBaseCharacter::OnDeathMontageEnded);
+        // AnimInstance->Montage_SetEndDelegate(EndDelegate, Animation);
         AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, DieAnimMontage);
 
         AnimInstance->Montage_Play(DieAnimMontage);
     }
     else
     {
-        UE_LOG(GOJBaseCharacterLog, Warning, TEXT("DieAnimMontage is not set! Removing character immediately."));
-        DestroyCharacter();
+        UE_LOG(GOJBaseCharacterLog, Warning, TEXT("No death animation set. Enabling ragdoll immediately."));
+        OnDeathMontageEnded(nullptr, true);  // Прямой вызов для включения рэгдолла
     }
 }
-
-
 
 void AGOJBaseCharacter::StartBlocking(UAnimMontage* Animation)
 {
@@ -230,23 +234,78 @@ void AGOJBaseCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterru
 {
     if (Montage == DieAnimMontage)
     {
-        UE_LOG(GOJBaseCharacterLog, Display, TEXT("Death animation ended. Removing character."));
-        DestroyCharacter();
+        UE_LOG(GOJBaseCharacterLog, Display, TEXT("Death animation ended. Enabling ragdoll."));
+
+        // Отключаем анимацию и включаем рэгдолл
+         EnableRagdoll();
+
+        // Удаляем персонажа через определенное время (если требуется)
+        SetLifeSpan(1.0f);
     }
+}
+
+void AGOJBaseCharacter::EnableRagdoll()
+{
+    if (!GetMesh()) return;
+
+    // Включение физики для Mesh
+    GetMesh()->SetSimulatePhysics(true);
+    GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+
+    // Отключение привязки Mesh к Capsule Component
+    GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+    // Отключаем Capsule Collision
+    if (GetCapsuleComponent())
+    {
+        GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+    }
+
+    // Отключаем движение
+    if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+    {
+        Movement->StopMovementImmediately();
+        Movement->DisableMovement();
+    }
+
+    // Отключаем управление
+    if (Controller)
+    {
+        Controller->SetIgnoreMoveInput(true);
+        Controller->SetIgnoreLookInput(true);
+    }
+
+    UE_LOG(GOJBaseCharacterLog, Display, TEXT("Ragdoll enabled."));
 }
 
 
 void AGOJBaseCharacter::DestroyCharacter()
 {
-    if (Controller)
-    {
-        Controller->SetIgnoreMoveInput(true);
-        Controller->SetIgnoreLookInput(true);
+    GetCharacterMovement()->DisableMovement();
+    SetLifeSpan(10.0f);
 
-        if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
-        {
-            PlayerController->UnPossess();
-        }
-    }
-    Destroy();
+    GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+    GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    GetMesh()->SetSimulatePhysics(true);
+}
+
+
+FText AGOJBaseCharacter::GetDevData(float Health, float Stamina)
+{
+    return FText::Format(FText::FromString(TEXT("{0} | {1}")), FText::AsNumber(Health), FText::AsNumber(Stamina));
+}
+
+void AGOJBaseCharacter::LockActions()
+{
+    CanWalk = false;
+    CanMakeHit = false;
+
+    GetCharacterMovement()->StopMovementImmediately();
+}
+
+void AGOJBaseCharacter::UnlockActions()
+{
+    CanWalk = true;
+    CanMakeHit = true;
 }

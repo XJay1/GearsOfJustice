@@ -22,7 +22,7 @@ public:
     float GetHealthPercent() const { return Health / MaxHealth; }
 
     UFUNCTION(BlueprintCallable, Category = "Health")
-    bool IsDead() const { return FMath::IsNearlyZero(Health); }
+    bool IsDead() const { return FMath::IsNearlyZero(Health) || Health <= 0; }
 
     float GetHealth() const { return Health; }
 
@@ -34,18 +34,17 @@ protected:
 public:
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+    UFUNCTION()
+    void OnTakeAnyDamage(
+        AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health", meta = (ClampMin = "0.0", ClampMax = "1000.0"))
     float MaxHealth = 100.0f;
 
-
 private:
     float Health = 0.0f;
     FTimerHandle HealTimerHandle;
-
-    UFUNCTION()
-    void OnTakeAnyDamage(
-        AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
     void SetHealth(float NewHealth);
 

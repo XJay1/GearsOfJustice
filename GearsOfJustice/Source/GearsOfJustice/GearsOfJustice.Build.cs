@@ -24,7 +24,8 @@ public class GearsOfJustice : ModuleRules
             "GearsOfJustice/Public/Components",
             "GearsOfJustice/Public/Menu",
             "GearsOfJustice/Public/Player",
-            "GearsOfJustice/Public/Dev"
+            "GearsOfJustice/Public/Dev",
+            "GearsOfJustice/Public/Strike"
 
         });
     }

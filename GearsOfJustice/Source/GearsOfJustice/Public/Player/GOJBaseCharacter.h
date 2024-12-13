@@ -10,6 +10,8 @@ class UCameraComponent;
 class USpringArmComponent;
 class UGOJHealthComponent;
 class UTextRenderComponent;
+class UGOJStaminaComponent;
+class UGOJCombatComponent;
 
 UCLASS()
 class GEARSOFJUSTICE_API AGOJBaseCharacter : public ACharacter
@@ -18,6 +20,10 @@ class GEARSOFJUSTICE_API AGOJBaseCharacter : public ACharacter
 
 public:
     AGOJBaseCharacter();
+
+    void LockActions();
+    void UnlockActions();
+
 
 protected:
     virtual void BeginPlay() override;
@@ -29,7 +35,6 @@ protected:
     void TurnAround(float AxisValue);
 
     void MoveCharacter(float AxisValue, EAxis::Type Axis);
-    void PlayAttackAnimation(UAnimMontage* Animation);
     void StopBlocking(UAnimMontage* Animation);
     void StartBlocking(UAnimMontage* Animation);
 
@@ -38,6 +43,7 @@ protected:
     void StrongPunch();
 
     void OnHealthChanged(float Health, float HealthDelta);
+    void OnStaminaChanged(float Stamina);
 
     FOnMontageEnded EndDelegate;
 
@@ -51,7 +57,13 @@ protected:
     UGOJHealthComponent* HealthComponent;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-    UTextRenderComponent* HealthTextComponent;
+    UGOJStaminaComponent* StaminaComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+    UTextRenderComponent* CharacterInfoTextComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+    UGOJCombatComponent* CombatComponent;
 
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
     UAnimMontage* EasyPunchAnimation;
@@ -72,15 +84,16 @@ protected:
     bool GetIsBlocking() const;
 
 public:
-    bool CanMakeHit = true;
-    bool CanWalk = true;
     bool IsBlocking = false;
 
     virtual void Tick(float DeltaTime) override;
 
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    void OnAnimationEnded(UAnimMontage* Montage, bool bInterrupted);
+    void SetCanWalk(bool bCanWalk) { CanWalk = bCanWalk; }
+
+    FORCEINLINE bool GetCanWalk() const { return CanWalk; }
+    FORCEINLINE bool GetCanStrike() const { return CanMakeHit; }
 
     void OnStartBlocking();
     void OnStopBlocking();
@@ -89,5 +102,12 @@ public:
     void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
     void DestroyCharacter();
 
+private:
+    bool CanMakeHit = true;
+    bool CanWalk = true;
 
+    FOnMontageEnded FOnDeadAnimationEnded;
+
+    FText GetDevData(float HelthPercent, float StaminaPercent);
+    void EnableRagdoll();
 };
