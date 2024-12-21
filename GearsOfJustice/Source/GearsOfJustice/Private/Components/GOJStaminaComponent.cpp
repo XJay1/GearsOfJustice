@@ -9,16 +9,14 @@ DEFINE_LOG_CATEGORY_STATIC(LogGOJStaminaComponent, All, All);
 
 UGOJStaminaComponent::UGOJStaminaComponent()
 {
+    SetStamina(MaxStamina);
 	PrimaryComponentTick.bCanEverTick = true;
-
-	Stamina = MaxStamina;
-
 }
 
 
 void UGOJStaminaComponent::BeginPlay()
 {
-    
+    SetStamina(MaxStamina);
 
 	Super::BeginPlay();
 }

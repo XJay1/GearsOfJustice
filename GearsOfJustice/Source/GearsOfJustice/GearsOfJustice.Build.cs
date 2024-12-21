@@ -11,12 +11,15 @@ public class GearsOfJustice : ModuleRules
         PublicDependencyModuleNames.AddRange(new string[] { 
             "Core", 
             "CoreUObject", 
-            "Engine", "InputCore", 
+            "Engine", 
+            "InputCore", 
             "NavigationSystem", 
             "AIModule", 
             "Niagara", 
             "EnhancedInput",
-            "UMG" 
+            "UMG", 
+            "GameplayTasks",
+            "NavigationSystem" 
         });
 
         PublicIncludePaths.AddRange(new string[]
@@ -25,7 +28,11 @@ public class GearsOfJustice : ModuleRules
             "GearsOfJustice/Public/Menu",
             "GearsOfJustice/Public/Player",
             "GearsOfJustice/Public/Dev",
-            "GearsOfJustice/Public/Strike"
+            "GearsOfJustice/Public/Strike",
+            "GearsOfJustice/Public/AI",
+            "GearsOfJustice/Public/AI/Service",
+            "GearsOfJustice/Public/AI/Decorator",
+            "GearsOfJustice/Public/Animation"
 
         });
     }

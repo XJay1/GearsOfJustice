@@ -1,14 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Components/GOJHealthComponent.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogGOJHealthComponent, All, All);
 
 UGOJHealthComponent::UGOJHealthComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
-
+    PrimaryComponentTick.bCanEverTick = false;
 }
-
 
 bool UGOJHealthComponent::IsHealthFull() const
 {
@@ -17,25 +16,22 @@ bool UGOJHealthComponent::IsHealthFull() const
 
 void UGOJHealthComponent::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
-	check(MaxHealth > 0);
+    check(MaxHealth > 0);
 
-	SetHealth(MaxHealth);
+    SetHealth(MaxHealth);
 
-	AActor* ComponentOwner = GetOwner();
-	if (ComponentOwner)
-	{
+    AActor* ComponentOwner = GetOwner();
+    if (ComponentOwner)
+    {
         ComponentOwner->OnTakeAnyDamage.AddDynamic(this, &UGOJHealthComponent::OnTakeAnyDamage);
-	}
-	
+    }
 }
-
 
 void UGOJHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
 void UGOJHealthComponent::OnTakeAnyDamage(
@@ -43,29 +39,34 @@ void UGOJHealthComponent::OnTakeAnyDamage(
 {
     if (Damage <= 0.0f || IsDead() || !GetWorld()) return;
 
-	SetHealth(Health - Damage);
+    SetHealth(Health - Damage);
 
-	if (IsDead())
+    SetIsUnderAtack(true);
+    GetWorld()->GetTimerManager().SetTimer(UnderAttackTimerHandle, this, &UGOJHealthComponent::OnUnderAttackTimerFinished, UnderAttackDelay);
+
+    if (IsDead())
     {
         OnDeath.Broadcast();
     }
 }
 
-
-void UGOJHealthComponent::SetHealth(float NewHealth) 
+void UGOJHealthComponent::SetHealth(float NewHealth)
 {
     const float NextHealth = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
     const float HealthDelta = NextHealth - Health;
-	
-	Health = NextHealth;
+
+    Health = NextHealth;
     OnHealthChanged.Broadcast(NextHealth, HealthDelta);
 }
 
 void UGOJHealthComponent::Dead(AController* KillerController)
 {
     if (!GetWorld()) return;
-
-
 }
 
-		
+void UGOJHealthComponent::OnUnderAttackTimerFinished()
+{
+    SetIsUnderAtack(false);
+    UE_LOG(LogGOJHealthComponent, Display, TEXT("bIsUnderAttack was changed to: %s"),
+        bIsUnderAttack ? TEXT("True") : TEXT("False"));
+}

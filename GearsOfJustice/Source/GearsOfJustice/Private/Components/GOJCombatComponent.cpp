@@ -4,6 +4,10 @@
 #include "Player/GOJBaseCharacter.h"
 #include "Components/GOJStaminaComponent.h"
 #include "Strike/GOJBasicStrike.h"
+#include "Strike/GOJEasyPunch.h"
+#include "Strike/GOJStrongPunch.h"
+#include "Strike/GOJKick.h"
+
 
 UGOJCombatComponent::UGOJCombatComponent()
 {
@@ -70,5 +74,35 @@ void UGOJCombatComponent::PlayHitReaction()
         AnimInstance->Montage_Play(HitReactionAnimation);
     }
 }
+
+FStrikeInfo UGOJCombatComponent::GetStrikeInfo(EStrikeType StrikeType)
+{
+    UClass* SelectedStrikeClass = nullptr;
+
+    switch (StrikeType)
+    {
+        case EStrikeType::Light: SelectedStrikeClass = LightStrikeClass; break;
+
+        case EStrikeType::Heavy: SelectedStrikeClass = HeavyStrikeClass; break;
+
+        case EStrikeType::Kick: SelectedStrikeClass = KickStrikeClass; break;
+
+        default:
+            
+            return FStrikeInfo();
+    }
+
+    if (SelectedStrikeClass)
+    {
+        const AGOJBasicStrike* DefaultStrike = SelectedStrikeClass->GetDefaultObject<AGOJBasicStrike>();
+        if (DefaultStrike)
+        {
+            return DefaultStrike->GetStrikeInfo();
+        }
+    }
+
+    return FStrikeInfo();
+}
+
 
 

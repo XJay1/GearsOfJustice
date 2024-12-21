@@ -28,8 +28,16 @@ public:
 
     bool IsHealthFull() const;
 
+    UFUNCTION(BlueprintCallable)
+    bool GetIsUnderAtack() { return bIsUnderAttack; }
+
+    UFUNCTION(BlueprintCallable)
+    void SetIsUnderAtack(bool IsUnderAtack) { bIsUnderAttack = IsUnderAtack; }
+
 protected:
     virtual void BeginPlay() override;
+
+    FTimerHandle UnderAttackTimerHandle;
 
 public:
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -42,6 +50,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health", meta = (ClampMin = "0.0", ClampMax = "1000.0"))
     float MaxHealth = 100.0f;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI", meta = (ClampMin = "0.0"))
+    float UnderAttackDelay = 2.0f;
+
 private:
     float Health = 0.0f;
     FTimerHandle HealTimerHandle;
@@ -49,4 +60,8 @@ private:
     void SetHealth(float NewHealth);
 
     void Dead(AController* KillerController);
+
+    bool bIsUnderAttack = false;
+
+    void OnUnderAttackTimerFinished();
 };

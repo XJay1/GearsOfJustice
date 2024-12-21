@@ -35,5 +35,9 @@ enum class EStrikeType : uint8
 {
     Light UMETA(DisplayName = "Light Stike"),
     Heavy UMETA(DisplayName = "Heavy Stike"),
-    Kick UMETA(DisplayName = "Kick Stike")
+    Kick UMETA(DisplayName = "Kick Stike"),
+    None UMETA(DisplayName = "None")
 };
+
+// Animation
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNotifiedSignature, USkeletalMeshComponent*);

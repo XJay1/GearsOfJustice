@@ -214,6 +214,26 @@ void AGOJBaseCharacter::StartBlocking(UAnimMontage* Animation)
     }
 }
 
+void AGOJBaseCharacter::PerformStrikeByStrikeType(EStrikeType StrikeType)
+{
+    if (!CanMakeHit) return;
+    
+    switch (StrikeType)
+    {
+        case EStrikeType::Light: 
+            EasyPunch();
+            break;
+        case EStrikeType::Heavy: 
+            StrongPunch(); 
+            break;
+        case EStrikeType::Kick: 
+            Kick(); 
+            break;
+        default: 
+            break;
+    }
+}
+
 void AGOJBaseCharacter::StopBlocking(UAnimMontage* Animation)
 {
     if (!Animation || !GetMesh()) return;

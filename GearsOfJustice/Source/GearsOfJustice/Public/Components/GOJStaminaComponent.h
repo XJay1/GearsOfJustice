@@ -25,6 +25,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Stamina")
     bool IsStaminaFull() const { return Stamina == MaxStamina; }
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI")
+    float StaminLevelToRetreat = 30.0f;
 
 protected:
     virtual void BeginPlay() override;

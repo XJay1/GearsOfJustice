@@ -21,6 +21,8 @@ public:
     bool GetCanWalk() const { return CanWalk; }
     bool GetCanMakeStrike() const { return CanMakeStrike; }
 
+    FStrikeInfo GetStrikeInfo() const { return StrikeInfo;  }
+
     void ExecuteStrike(ACharacter* InstigatorCharacter);
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Strike")

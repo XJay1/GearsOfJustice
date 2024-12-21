@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "GOJCoreTypes.h"
 #include "GOJBaseCharacter.generated.h"
 
 class UCameraComponent;
@@ -24,7 +25,6 @@ public:
     void LockActions();
     void UnlockActions();
 
-
 protected:
     virtual void BeginPlay() override;
 
@@ -38,12 +38,14 @@ protected:
     void StopBlocking(UAnimMontage* Animation);
     void StartBlocking(UAnimMontage* Animation);
 
-    void EasyPunch();
-    void Kick();
-    void StrongPunch();
+    void PerformStrikeByStrikeType(EStrikeType StrikeType);
 
     void OnHealthChanged(float Health, float HealthDelta);
     void OnStaminaChanged(float Stamina);
+
+    void EasyPunch();
+    void Kick();
+    void StrongPunch();
 
     FOnMontageEnded EndDelegate;
 
@@ -95,8 +97,8 @@ public:
     FORCEINLINE bool GetCanWalk() const { return CanWalk; }
     FORCEINLINE bool GetCanStrike() const { return CanMakeHit; }
 
-    void OnStartBlocking();
-    void OnStopBlocking();
+    virtual void OnStartBlocking();
+    virtual void OnStopBlocking();
     void OnDeath();
 
     void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
