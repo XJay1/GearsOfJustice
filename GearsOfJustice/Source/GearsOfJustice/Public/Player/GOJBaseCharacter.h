@@ -22,21 +22,13 @@ class GEARSOFJUSTICE_API AGOJBaseCharacter : public ACharacter
 public:
     AGOJBaseCharacter();
 
-    void LockActions();
-    void UnlockActions();
-
 protected:
     virtual void BeginPlay() override;
 
     void MoveForward(float AxisValue);
-
     void MoveRight(float AxisValue);
-
     void TurnAround(float AxisValue);
-
     void MoveCharacter(float AxisValue, EAxis::Type Axis);
-    void StopBlocking(UAnimMontage* Animation);
-    void StartBlocking(UAnimMontage* Animation);
 
     void PerformStrikeByStrikeType(EStrikeType StrikeType);
 
@@ -68,22 +60,7 @@ protected:
     UGOJCombatComponent* CombatComponent;
 
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
-    UAnimMontage* EasyPunchAnimation;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Animation")
-    UAnimMontage* KickAnimation;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Animation")
-    UAnimMontage* StrongPunchAnimation;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Animation")
-    UAnimMontage* BlockAnimMontage;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Animation")
     UAnimMontage* DieAnimMontage;
-
-    UFUNCTION(BlueprintCallable, Category = "Figting")
-    bool GetIsBlocking() const;
 
 public:
     bool IsBlocking = false;
@@ -92,11 +69,6 @@ public:
 
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    void SetCanWalk(bool bCanWalk) { CanWalk = bCanWalk; }
-
-    FORCEINLINE bool GetCanWalk() const { return CanWalk; }
-    FORCEINLINE bool GetCanStrike() const { return CanMakeHit; }
-
     virtual void OnStartBlocking();
     virtual void OnStopBlocking();
     void OnDeath();
@@ -104,9 +76,17 @@ public:
     void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
     void DestroyCharacter();
 
+    bool GetCanWalk() const { return bCanWalk; }
+    void SetCanWalk(bool CanWalk) { bCanWalk = CanWalk; }
+
+    UFUNCTION(BlueprintCallable)
+    bool GetIsBlocking() const;
+
+    void LockAllActions();
+    void UnlockAllActions();
+
 private:
-    bool CanMakeHit = true;
-    bool CanWalk = true;
+    bool bCanWalk = true;
 
     FOnMontageEnded FOnDeadAnimationEnded;
 

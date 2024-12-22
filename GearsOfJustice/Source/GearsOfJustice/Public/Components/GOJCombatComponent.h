@@ -8,6 +8,7 @@
 #include "GOJCombatComponent.generated.h"
 
 class AGOJBasicStrike;
+class AGOJBaseCharacter;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class GEARSOFJUSTICE_API UGOJCombatComponent : public UActorComponent
@@ -19,8 +20,6 @@ public:
 
 protected:
     virtual void BeginPlay() override;
-
-
 
 public:
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -37,11 +36,28 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     UAnimMontage* HitReactionAnimation;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+    UAnimMontage* BlockAnimation;
+
     void PerformStrike(EStrikeType StrikeType);
 
     void PlayHitReaction();
 
     FStrikeInfo GetStrikeInfo(EStrikeType StrikeType);
 
+    void StopBlocking();
+    void StartBlocking();
 
+    bool GetIsBlocking() const { return bIsBlocking; }
+    void SetIsBlocking(bool IsBlocking) { bIsBlocking = IsBlocking; }
+
+    bool GetCanMakeHit() const { return bCanMakeHit; }
+    void SetCanMakeHit(bool CanMakeHit) { bCanMakeHit = CanMakeHit; }
+
+private:
+    bool bIsBlocking = false;
+    bool bCanMakeHit = true;
+
+    USkeletalMeshComponent* GetCharacterSkeletalMeshComponent();
+    AGOJBaseCharacter* GetGOJBaseCharacter();
 };

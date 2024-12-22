@@ -67,12 +67,11 @@ void AGOJAICharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    if (GetIsBlocking())
+    AActor* PlayerActor = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+    if (PlayerActor)
     {
-        AActor* PlayerActor = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-        if (PlayerActor)
+        if (CombatComponent->GetIsBlocking())
         {
-
             FVector DirectionToPlayer = PlayerActor->GetActorLocation() - GetActorLocation();
             DirectionToPlayer.Z = 0.0f;
 

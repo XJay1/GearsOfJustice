@@ -54,17 +54,20 @@ void AGOJBasicStrike::PlayAttackAnimation(UAnimMontage* Animation, ACharacter* C
 {
     if (!CanWalk || !Animation ) return;
 
-    AGOJBaseCharacter* BaseCharacter = Cast<AGOJBaseCharacter>(Character);
+    const auto BaseCharacter = Cast<AGOJBaseCharacter>(Character);
+    if (!BaseCharacter) return;
 
-    if (!BaseCharacter || !BaseCharacter->GetCanStrike()) return;
+    const auto CombatComponent = BaseCharacter->FindComponentByClass<UGOJCombatComponent>();
 
-    USkeletalMeshComponent* Mesh = Character->GetMesh();
+    if (!CombatComponent || !CombatComponent->GetCanMakeHit()) return;
+
+    const USkeletalMeshComponent* Mesh = Character->GetMesh();
 
     if (!Mesh) return;
 
-    BaseCharacter->LockActions();
+    BaseCharacter->LockAllActions();
 
-    auto AnimInstance = Mesh->GetAnimInstance();
+    const auto AnimInstance = Mesh->GetAnimInstance();
     if (AnimInstance)
     {
         UE_LOG(LogBaseStrike, Display, TEXT("Playing attack animation: %s"), *Animation->GetName());
@@ -79,9 +82,7 @@ void AGOJBasicStrike::OnAnimationEnded(UAnimMontage* Montage, bool bInterrupted)
 
     if (CurrentCharacter)
     {
-        
-
-        CurrentCharacter->UnlockActions();
+        CurrentCharacter->UnlockAllActions();
         CurrentCharacter = nullptr;
     }
 }

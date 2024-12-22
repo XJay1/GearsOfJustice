@@ -41,7 +41,6 @@ AGOJBaseCharacter::AGOJBaseCharacter()
     CharacterInfoTextComponent->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
     CharacterInfoTextComponent->SetTextRenderColor(FColor::Blue);
     CharacterInfoTextComponent->SetWorldSize(50.0f);
-
 }
 
 void AGOJBaseCharacter::BeginPlay()
@@ -58,7 +57,6 @@ void AGOJBaseCharacter::BeginPlay()
     HealthComponent->OnHealthChanged.AddUObject(this, &AGOJBaseCharacter::OnHealthChanged);
     HealthComponent->OnDeath.AddUObject(this, &AGOJBaseCharacter::OnDeath);
 
-
     StaminaComponent->OnStaminaChangedDelegate.AddUObject(this, &AGOJBaseCharacter::OnStaminaChanged);
 
     FOnDeadAnimationEnded.BindUObject(this, &AGOJBaseCharacter::OnDeathMontageEnded);
@@ -73,16 +71,11 @@ void AGOJBaseCharacter::OnHealthChanged(float Health, float HealthDelta)
     CharacterInfoTextComponent->SetText(StatusText);
 }
 
-void AGOJBaseCharacter::OnStaminaChanged(float Stamina) 
+void AGOJBaseCharacter::OnStaminaChanged(float Stamina)
 {
     FText StatusText = GetDevData(HealthComponent->GetHealth(), StaminaComponent->GetStamina());
 
     CharacterInfoTextComponent->SetText(StatusText);
-}
-
-bool AGOJBaseCharacter::GetIsBlocking() const
-{
-    return IsBlocking;
 }
 
 void AGOJBaseCharacter::Tick(float DeltaTime)
@@ -117,7 +110,7 @@ void AGOJBaseCharacter::MoveRight(float AxisValue)
 
 void AGOJBaseCharacter::MoveCharacter(float AxisValue, EAxis::Type Axis)
 {
-    if (!CanWalk || !Controller || AxisValue == 0.0f) return;
+    if (!GetCanWalk() || !Controller || AxisValue == 0.0f) return;
 
     const FRotator Rotation = Controller->GetControlRotation();
     const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -133,7 +126,7 @@ void AGOJBaseCharacter::TurnAround(float AxisValue)
 
 void AGOJBaseCharacter::EasyPunch()
 {
-    if (CombatComponent && CanMakeHit)
+    if (CombatComponent && CombatComponent->GetCanMakeHit())
     {
         CombatComponent->PerformStrike(EStrikeType::Light);
     }
@@ -141,7 +134,7 @@ void AGOJBaseCharacter::EasyPunch()
 
 void AGOJBaseCharacter::Kick()
 {
-    if (CombatComponent && CanMakeHit)
+    if (CombatComponent && CombatComponent->GetCanMakeHit())
     {
         CombatComponent->PerformStrike(EStrikeType::Kick);
     }
@@ -149,22 +142,20 @@ void AGOJBaseCharacter::Kick()
 
 void AGOJBaseCharacter::StrongPunch()
 {
-    if (CombatComponent && CanMakeHit)
+    if (CombatComponent && CombatComponent->GetCanMakeHit())
     {
         CombatComponent->PerformStrike(EStrikeType::Heavy);
     }
 }
 
-
-
 void AGOJBaseCharacter::OnStartBlocking()
 {
-    StartBlocking(BlockAnimMontage);
+    CombatComponent->StartBlocking();
 }
 
 void AGOJBaseCharacter::OnStopBlocking()
 {
-    StopBlocking(BlockAnimMontage);
+    CombatComponent->StopBlocking();
 }
 
 void AGOJBaseCharacter::OnDeath()
@@ -198,55 +189,16 @@ void AGOJBaseCharacter::OnDeath()
     }
 }
 
-void AGOJBaseCharacter::StartBlocking(UAnimMontage* Animation)
-{
-    if (!Animation || !GetMesh()) return;
-
-    IsBlocking = true;
-    CanMakeHit = false;
-    CanWalk = false;
-
-    auto AnimInstance = GetMesh()->GetAnimInstance();
-    if (AnimInstance)
-    {
-        UE_LOG(GOJBaseCharacterLog, Display, TEXT("Blocking animation started"));
-        AnimInstance->Montage_Play(Animation, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-    }
-}
-
 void AGOJBaseCharacter::PerformStrikeByStrikeType(EStrikeType StrikeType)
 {
-    if (!CanMakeHit) return;
-    
+    if (!CombatComponent->GetCanMakeHit()) return;
+
     switch (StrikeType)
     {
-        case EStrikeType::Light: 
-            EasyPunch();
-            break;
-        case EStrikeType::Heavy: 
-            StrongPunch(); 
-            break;
-        case EStrikeType::Kick: 
-            Kick(); 
-            break;
-        default: 
-            break;
-    }
-}
-
-void AGOJBaseCharacter::StopBlocking(UAnimMontage* Animation)
-{
-    if (!Animation || !GetMesh()) return;
-
-    IsBlocking = false;
-    CanMakeHit = true;
-    CanWalk = true;
-
-    auto AnimInstance = GetMesh()->GetAnimInstance();
-    if (AnimInstance && AnimInstance->Montage_IsPlaying(Animation))
-    {
-        UE_LOG(GOJBaseCharacterLog, Display, TEXT("Blocking animation stopped"));
-        AnimInstance->Montage_Stop(0.2f, Animation);
+        case EStrikeType::Light: EasyPunch(); break;
+        case EStrikeType::Heavy: StrongPunch(); break;
+        case EStrikeType::Kick: Kick(); break;
+        default: break;
     }
 }
 
@@ -257,7 +209,7 @@ void AGOJBaseCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterru
         UE_LOG(GOJBaseCharacterLog, Display, TEXT("Death animation ended. Enabling ragdoll."));
 
         // Отключаем анимацию и включаем рэгдолл
-         EnableRagdoll();
+        EnableRagdoll();
 
         // Удаляем персонажа через определенное время (если требуется)
         SetLifeSpan(1.0f);
@@ -299,7 +251,6 @@ void AGOJBaseCharacter::EnableRagdoll()
     UE_LOG(GOJBaseCharacterLog, Display, TEXT("Ragdoll enabled."));
 }
 
-
 void AGOJBaseCharacter::DestroyCharacter()
 {
     GetCharacterMovement()->DisableMovement();
@@ -310,22 +261,26 @@ void AGOJBaseCharacter::DestroyCharacter()
     GetMesh()->SetSimulatePhysics(true);
 }
 
-
 FText AGOJBaseCharacter::GetDevData(float Health, float Stamina)
 {
     return FText::Format(FText::FromString(TEXT("{0} | {1}")), FText::AsNumber(Health), FText::AsNumber(Stamina));
 }
 
-void AGOJBaseCharacter::LockActions()
+bool AGOJBaseCharacter::GetIsBlocking() const
 {
-    CanWalk = false;
-    CanMakeHit = false;
+    if (!CombatComponent) return false;
 
-    GetCharacterMovement()->StopMovementImmediately();
+    return CombatComponent->GetIsBlocking();
 }
 
-void AGOJBaseCharacter::UnlockActions()
+void AGOJBaseCharacter::LockAllActions()
 {
-    CanWalk = true;
-    CanMakeHit = true;
+    SetCanWalk(false);
+    CombatComponent->SetCanMakeHit(false);
+}
+
+void AGOJBaseCharacter::UnlockAllActions() 
+{
+    SetCanWalk(true);
+    CombatComponent->SetCanMakeHit(true);
 }
