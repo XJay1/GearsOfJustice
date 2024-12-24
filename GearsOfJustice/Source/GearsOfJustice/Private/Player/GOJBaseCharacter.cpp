@@ -9,7 +9,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
 #include "Components/GOJHealthComponent.h"
-#include "Components/TextRenderComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/GOJCombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -36,11 +35,6 @@ AGOJBaseCharacter::AGOJBaseCharacter()
 
     CombatComponent = CreateDefaultSubobject<UGOJCombatComponent>("CombatComponent");
 
-    CharacterInfoTextComponent = CreateDefaultSubobject<UTextRenderComponent>("HealthTextComponent");
-    CharacterInfoTextComponent->SetupAttachment(RootComponent);
-    CharacterInfoTextComponent->SetHorizontalAlignment(EHorizTextAligment::EHTA_Center);
-    CharacterInfoTextComponent->SetTextRenderColor(FColor::Blue);
-    CharacterInfoTextComponent->SetWorldSize(50.0f);
 }
 
 void AGOJBaseCharacter::BeginPlay()
@@ -68,14 +62,13 @@ void AGOJBaseCharacter::OnHealthChanged(float Health, float HealthDelta)
 {
     FText StatusText = GetDevData(HealthComponent->GetHealth(), StaminaComponent->GetStamina());
 
-    CharacterInfoTextComponent->SetText(StatusText);
+    
 }
 
 void AGOJBaseCharacter::OnStaminaChanged(float Stamina)
 {
     FText StatusText = GetDevData(HealthComponent->GetHealth(), StaminaComponent->GetStamina());
 
-    CharacterInfoTextComponent->SetText(StatusText);
 }
 
 void AGOJBaseCharacter::Tick(float DeltaTime)

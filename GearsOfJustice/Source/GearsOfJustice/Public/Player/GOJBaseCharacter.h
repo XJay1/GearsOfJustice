@@ -10,7 +10,6 @@
 class UCameraComponent;
 class USpringArmComponent;
 class UGOJHealthComponent;
-class UTextRenderComponent;
 class UGOJStaminaComponent;
 class UGOJCombatComponent;
 
@@ -53,8 +52,6 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     UGOJStaminaComponent* StaminaComponent;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-    UTextRenderComponent* CharacterInfoTextComponent;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     UGOJCombatComponent* CombatComponent;

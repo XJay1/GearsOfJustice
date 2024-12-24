@@ -32,7 +32,8 @@ public class GearsOfJustice : ModuleRules
             "GearsOfJustice/Public/AI",
             "GearsOfJustice/Public/AI/Service",
             "GearsOfJustice/Public/AI/Decorator",
-            "GearsOfJustice/Public/Animation"
+            "GearsOfJustice/Public/Animation",
+            "GearsOfJustice/Public/UI"
 
         });
     }
