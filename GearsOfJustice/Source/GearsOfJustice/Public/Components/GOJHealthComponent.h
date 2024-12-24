@@ -7,6 +7,8 @@
 #include "GOJCoreTypes.h"
 #include "GOJHealthComponent.generated.h"
 
+class UGOJCombatComponent;
+
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class GEARSOFJUSTICE_API UGOJHealthComponent : public UActorComponent
 {
@@ -22,7 +24,7 @@ public:
     float GetHealthPercent() const { return Health / MaxHealth; }
 
     UFUNCTION(BlueprintCallable, Category = "Health")
-    bool IsDead() const { return FMath::IsNearlyZero(Health) || Health <= 0; }
+    bool GetIsDead() const { return FMath::IsNearlyZero(Health) || Health <= 0; }
 
     float GetHealth() const { return Health; }
 
@@ -64,4 +66,5 @@ private:
     bool bIsUnderAttack = false;
 
     void OnUnderAttackTimerFinished();
+    UGOJCombatComponent* GetGOJCombatComponent();
 };

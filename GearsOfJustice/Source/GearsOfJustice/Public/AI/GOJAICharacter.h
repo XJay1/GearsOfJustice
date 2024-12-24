@@ -44,6 +44,8 @@ public:
     bool IsAttacking() const { return bIsAttacking; }
     void SetIsAttacking(bool InIsAttacking) { bIsAttacking = InIsAttacking; }
 
+    virtual void OnDeath() override;
+
 protected:
     FTimerHandle BlockTimerHandle;
     FTimerDelegate TimerDelegate;

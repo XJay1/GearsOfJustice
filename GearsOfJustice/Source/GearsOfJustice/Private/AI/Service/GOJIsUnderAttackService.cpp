@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "AI/Service/GOJIsUnderAttackService.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -8,7 +5,7 @@
 #include "Components/GOJHealthComponent.h"
 #include "Components/GOJStaminaComponent.h"
 
-UGOJIsUnderAttackService::UGOJIsUnderAttackService() 
+UGOJIsUnderAttackService::UGOJIsUnderAttackService()
 {
     NodeName = "IsUnderAttack";
 }
@@ -28,17 +25,26 @@ void UGOJIsUnderAttackService::TickNode(UBehaviorTreeComponent& OwnerComp, uint8
 
         bool bIsUnderAttack = false;
 
+        const float RandomChance = FMath::FRand();
+
         if (StaminaComponent && StaminaComponent->GetStamina() <= StaminaComponent->StaminLevelToRetreat)
         {
-            bIsUnderAttack = true;
+            bIsUnderAttack = RandomChance < 0.5f;  
         }
 
         if (HealthComponent && HealthComponent->GetIsUnderAtack())
         {
-            bIsUnderAttack = true;
+            bIsUnderAttack = RandomChance < 0.60f;  
+        }
+
+        if (!bIsUnderAttack && RandomChance < 0.3f)
+        {
+            bIsUnderAttack = true;  
         }
 
         BlackboardComponent->SetValueAsBool(IsUnderAttackBlackboardName, bIsUnderAttack);
+
+        UE_LOG(LogTemp, Display, TEXT("RandomChance: %f, bIsUnderAttack: %s"), RandomChance, bIsUnderAttack ? TEXT("True") : TEXT("False"));
     }
 
     Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);

@@ -52,7 +52,9 @@ void AGOJBasicStrike::ExecuteStrike(ACharacter* Character)
 
 void AGOJBasicStrike::PlayAttackAnimation(UAnimMontage* Animation, ACharacter* Character)
 {
-    if (!CanWalk || !Animation ) return;
+    if (!CanMakeStrike || !Animation ) return;
+
+    CanMakeStrike = false;
 
     const auto BaseCharacter = Cast<AGOJBaseCharacter>(Character);
     if (!BaseCharacter) return;
@@ -66,6 +68,7 @@ void AGOJBasicStrike::PlayAttackAnimation(UAnimMontage* Animation, ACharacter* C
     if (!Mesh) return;
 
     BaseCharacter->LockAllActions();
+    CombatComponent->SetCanBlock(false);
 
     const auto AnimInstance = Mesh->GetAnimInstance();
     if (AnimInstance)
@@ -83,6 +86,13 @@ void AGOJBasicStrike::OnAnimationEnded(UAnimMontage* Montage, bool bInterrupted)
     if (CurrentCharacter)
     {
         CurrentCharacter->UnlockAllActions();
+        const auto CombatComponent = CurrentCharacter->FindComponentByClass<UGOJCombatComponent>();
+        if (CombatComponent)
+        {
+            CombatComponent->SetCanBlock(true);
+            
+        }
+        CanMakeStrike = false;
         CurrentCharacter = nullptr;
     }
 }
@@ -120,20 +130,36 @@ void AGOJBasicStrike::ApplyDamageToHitCharacters()
 
         AActor* HitActor = HitResult.GetActor();
         if (!HitActor) return;
+
+        const auto StaminaComponent = HitActor->FindComponentByClass<UGOJStaminaComponent>();
+        if (!StaminaComponent) return;
+
+        const auto CombatComponent = HitActor->FindComponentByClass<UGOJCombatComponent>();
+        if (!StaminaComponent) return;
         
         UGOJHealthComponent* HealthComponent = HitActor->FindComponentByClass<UGOJHealthComponent>();
-        if (HealthComponent && !HealthComponent->IsDead())
-        {
-            HealthComponent->OnTakeAnyDamage(HitActor, StrikeInfo.Damage, nullptr, nullptr, CurrentCharacter);
-            AGOJBaseCharacter* HitCharacter = Cast<AGOJBaseCharacter>(HitActor);
-            UGOJCombatComponent* CombatComponent = HitCharacter->FindComponentByClass<UGOJCombatComponent>();
+        if (!HealthComponent) return;
 
-            if (CombatComponent && CombatComponent->HitReactionAnimation)
+        if (!HealthComponent->GetIsDead())
+        {
+            if (CombatComponent && CombatComponent->HitReactionAnimation && !HealthComponent->GetIsDead())
             {
                 CombatComponent->PlayHitReaction();
             }
+
+            if (CombatComponent->GetIsBlocking() && StaminaComponent->GetStamina() >= StrikeInfo.Damage)
+            {
+                StaminaComponent->IncreaseStamina(StrikeInfo.Damage);
+            }
+            else
+            {
+                CombatComponent->StopBlocking();
+                HealthComponent->OnTakeAnyDamage(HitActor, StrikeInfo.Damage, nullptr, nullptr, CurrentCharacter);
+            }
+
+            
         }
-        else if (HealthComponent && HealthComponent->IsDead())
+        if (HealthComponent->GetIsDead())
         {
             HealthComponent->OnDeath.Broadcast();
         }

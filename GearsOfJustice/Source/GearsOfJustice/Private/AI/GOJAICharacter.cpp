@@ -3,24 +3,19 @@
 #include "AI/GOJAICharacter.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
+#include "AIController.h"
 #include "GOJCoreTypes.h"
 #include "Components/GOJCombatComponent.h"
 #include "Components/GOJStaminaComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "BrainComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(GOJAICharacterLog, All, All);
 
 void AGOJAICharacter::OnStartBlocking()
 {
-    float BlockDuration = FMath::RandRange(1.0f, 3.0f);
 
     Super::OnStartBlocking();
-
-    UE_LOG(GOJAICharacterLog, Display, TEXT("AI Character started blocking for %.2f seconds"), BlockDuration);
-
-    TimerDelegate.BindLambda([this]() { OnStopBlocking(); });
-
-    GetWorldTimerManager().SetTimer(BlockTimerHandle, TimerDelegate, BlockDuration, false);
 }
 
 void AGOJAICharacter::OnStopBlocking()
@@ -84,6 +79,17 @@ void AGOJAICharacter::Tick(float DeltaTime)
 }
 
 void AGOJAICharacter::OnAttackAnimationComplete() {}
+
+void AGOJAICharacter::OnDeath() 
+{
+    const auto GOJController = Cast<AAIController>(Controller);
+    if (GOJController && GOJController->BrainComponent)
+    {
+        GOJController->BrainComponent->Cleanup();
+    }
+
+    Super::OnDeath();
+}
 
 float AGOJAICharacter::GetDistanceToPlayer() const
 {

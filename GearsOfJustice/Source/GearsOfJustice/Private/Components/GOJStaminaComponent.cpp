@@ -33,6 +33,8 @@ void UGOJStaminaComponent::SetStamina(float NewStamina)
 
 void UGOJStaminaComponent::UpdateStamina() 
 {
+    if (!AutoStaminaRegen) return;
+
     SetStamina(Stamina + StaminaModifier);
 
 	if (IsStaminaFull() && GetWorld())
@@ -50,8 +52,12 @@ void UGOJStaminaComponent::IncreaseStamina(float RequiredStamina)
 	SetStamina(Stamina - RequiredStamina);
 
     GetWorld()->GetTimerManager().ClearTimer(StaminaTimerHandle);
+
+    UE_LOG(LogGOJStaminaComponent, Display, TEXT("Stamina auto regen: %s"), AutoStaminaRegen ? TEXT("True") : TEXT("False"));
+
     if (AutoStaminaRegen)
     {
+        
         GetWorld()->GetTimerManager().SetTimer(StaminaTimerHandle, this, &UGOJStaminaComponent::UpdateStamina, StaminaUpdateTime, true, StaminaUpdateDelay);
     }
 

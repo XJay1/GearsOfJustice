@@ -9,6 +9,7 @@
 
 class AGOJBasicStrike;
 class AGOJBaseCharacter;
+class UGOJStaminaComponent;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class GEARSOFJUSTICE_API UGOJCombatComponent : public UActorComponent
@@ -33,11 +34,13 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
     TSubclassOf<AGOJBasicStrike> KickStrikeClass;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
     UAnimMontage* HitReactionAnimation;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
     UAnimMontage* BlockAnimation;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+    UAnimMontage* HitInBlockReactionAnimation;
 
     void PerformStrike(EStrikeType StrikeType);
 
@@ -54,10 +57,21 @@ public:
     bool GetCanMakeHit() const { return bCanMakeHit; }
     void SetCanMakeHit(bool CanMakeHit) { bCanMakeHit = CanMakeHit; }
 
+    bool GetCanBlock() const { return bCanBlock; }
+    void SetCanBlock(bool CanBlock) { bCanBlock = CanBlock; }
+
+    bool GetIsUnderHit() const { return bIsUnderHit; }
+    void SetIsUnderHit(bool IsUnderHit) { bIsUnderHit = IsUnderHit; }
+
 private:
     bool bIsBlocking = false;
     bool bCanMakeHit = true;
+    bool bCanBlock = true;
+    bool bIsUnderHit = false;
 
     USkeletalMeshComponent* GetCharacterSkeletalMeshComponent();
     AGOJBaseCharacter* GetGOJBaseCharacter();
+    UGOJStaminaComponent* GetGOJStaminaComponent();
+    UFUNCTION()
+    void OnHitMontageEnded(UAnimMontage* Montage, bool bInerrupted);
 };

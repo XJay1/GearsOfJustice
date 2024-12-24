@@ -28,6 +28,11 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI")
     float StaminLevelToRetreat = 30.0f;
 
+    bool GetAutoStaminaRegen() const { return AutoStaminaRegen; }
+    void SetStaminaAutoRegen(bool StaminaAutoRegen) { AutoStaminaRegen = StaminaAutoRegen; } 
+
+    bool HasEnoughStamina(float RequiredStamina) const { return Stamina >= RequiredStamina; }
+
 protected:
     virtual void BeginPlay() override;
 

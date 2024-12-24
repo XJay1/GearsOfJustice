@@ -71,7 +71,7 @@ public:
 
     virtual void OnStartBlocking();
     virtual void OnStopBlocking();
-    void OnDeath();
+    virtual void OnDeath();
 
     void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
     void DestroyCharacter();

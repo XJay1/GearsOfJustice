@@ -155,12 +155,23 @@ void AGOJBaseCharacter::OnStartBlocking()
 
 void AGOJBaseCharacter::OnStopBlocking()
 {
+    UE_LOG(GOJBaseCharacterLog, Display, TEXT("Block button was realesed"));
     CombatComponent->StopBlocking();
 }
 
 void AGOJBaseCharacter::OnDeath()
 {
-    // Блокируем движение и управление
+
+    if (UCapsuleComponent* CurrentCapsuleComponent = GetCapsuleComponent())
+    {
+        CurrentCapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    }
+
+    if (USkeletalMeshComponent* MeshComponent = GetMesh())
+    {
+        MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    }
+
     if (UCharacterMovementComponent* Movement = GetCharacterMovement())
     {
         Movement->DisableMovement();
@@ -170,22 +181,6 @@ void AGOJBaseCharacter::OnDeath()
     {
         Controller->SetIgnoreMoveInput(true);
         Controller->SetIgnoreLookInput(true);
-    }
-
-    // Проверяем наличие анимации смерти
-    auto AnimInstance = GetMesh() ? GetMesh()->GetAnimInstance() : nullptr;
-    if (DieAnimMontage && AnimInstance)
-    {
-        FOnMontageEnded MontageEndedDelegate;
-        // AnimInstance->Montage_SetEndDelegate(EndDelegate, Animation);
-        AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, DieAnimMontage);
-
-        AnimInstance->Montage_Play(DieAnimMontage);
-    }
-    else
-    {
-        UE_LOG(GOJBaseCharacterLog, Warning, TEXT("No death animation set. Enabling ragdoll immediately."));
-        OnDeathMontageEnded(nullptr, true);  // Прямой вызов для включения рэгдолла
     }
 }
 
@@ -208,10 +203,8 @@ void AGOJBaseCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterru
     {
         UE_LOG(GOJBaseCharacterLog, Display, TEXT("Death animation ended. Enabling ragdoll."));
 
-        // Отключаем анимацию и включаем рэгдолл
         EnableRagdoll();
 
-        // Удаляем персонажа через определенное время (если требуется)
         SetLifeSpan(1.0f);
     }
 }
@@ -220,28 +213,22 @@ void AGOJBaseCharacter::EnableRagdoll()
 {
     if (!GetMesh()) return;
 
-    // Включение физики для Mesh
     GetMesh()->SetSimulatePhysics(true);
     GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
 
-    // Отключение привязки Mesh к Capsule Component
     GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 
-    // Отключаем Capsule Collision
     if (GetCapsuleComponent())
     {
         GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
     }
 
-    // Отключаем движение
     if (UCharacterMovementComponent* Movement = GetCharacterMovement())
     {
         Movement->StopMovementImmediately();
         Movement->DisableMovement();
     }
-
-    // Отключаем управление
     if (Controller)
     {
         Controller->SetIgnoreMoveInput(true);
@@ -279,7 +266,7 @@ void AGOJBaseCharacter::LockAllActions()
     CombatComponent->SetCanMakeHit(false);
 }
 
-void AGOJBaseCharacter::UnlockAllActions() 
+void AGOJBaseCharacter::UnlockAllActions()
 {
     SetCanWalk(true);
     CombatComponent->SetCanMakeHit(true);

@@ -31,11 +31,6 @@ void UGOJGetCharacterLocationService::TickNode(UBehaviorTreeComponent& OwnerComp
         {
             BlackboardComponent->SetValueAsVector("PlayerLocation", PlayerPawn->GetActorLocation());
         }
-
-      
-
-        UE_LOG(LogGOJGetCharacterLocationServiceLog, Display, TEXT("ShouldRetreat: %s"),
-            BlackboardComponent->GetValueAsBool("ShouldRetreat") ? TEXT("True") : TEXT("False"));
     }
 
     Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);

@@ -27,18 +27,15 @@ void UGOJCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 void UGOJCombatComponent::PerformStrike(EStrikeType StrikeType)
 {
-
     AGOJBaseCharacter* OwnerCharacter = Cast<AGOJBaseCharacter>(GetOwner());
-    if (!OwnerCharacter) return;
+    if (!OwnerCharacter || !GetCanMakeHit()) return; 
 
     UClass* SelectedStrikeClass = nullptr;
 
     switch (StrikeType)
     {
         case EStrikeType::Light: SelectedStrikeClass = LightStrikeClass; break;
-
         case EStrikeType::Heavy: SelectedStrikeClass = HeavyStrikeClass; break;
-
         case EStrikeType::Kick: SelectedStrikeClass = KickStrikeClass; break;
     }
 
@@ -47,13 +44,14 @@ void UGOJCombatComponent::PerformStrike(EStrikeType StrikeType)
     if (auto StaminaComponent = OwnerCharacter->FindComponentByClass<UGOJStaminaComponent>())
     {
         const AGOJBasicStrike* TempStrike = SelectedStrikeClass->GetDefaultObject<AGOJBasicStrike>();
-        if (TempStrike)
+        if (TempStrike && StaminaComponent->HasEnoughStamina(TempStrike->StrikeInfo.RequiredStamina))  
         {
             AGOJBasicStrike* Strike = GetWorld()->SpawnActor<AGOJBasicStrike>(SelectedStrikeClass);
 
             if (Strike)
             {
                 Strike->ExecuteStrike(OwnerCharacter);
+                StaminaComponent->IncreaseStamina(TempStrike->StrikeInfo.RequiredStamina);  
             }
         }
     }
@@ -61,7 +59,15 @@ void UGOJCombatComponent::PerformStrike(EStrikeType StrikeType)
 
 void UGOJCombatComponent::PlayHitReaction()
 {
-    if (!HitReactionAnimation) return;
+    if (!HitReactionAnimation || !HitInBlockReactionAnimation || GetIsUnderHit()) return;
+
+    SetIsUnderHit(true);
+
+    const auto BaseCharacter = GetGOJBaseCharacter();
+    if (!BaseCharacter) return;
+
+    const auto StaminaComponent = BaseCharacter->FindComponentByClass<UGOJStaminaComponent>();
+    if (!StaminaComponent) return;
 
     const auto Mesh = GetCharacterSkeletalMeshComponent();
     if (!Mesh) return;
@@ -69,7 +75,18 @@ void UGOJCombatComponent::PlayHitReaction()
     auto AnimInstance = Mesh->GetAnimInstance();
     if (AnimInstance)
     {
-        AnimInstance->Montage_Play(HitReactionAnimation);
+        BaseCharacter->SetCanWalk(false);
+        SetCanMakeHit(false);
+        SetCanBlock(false);
+        StaminaComponent->SetStaminaAutoRegen(true);
+
+        UAnimMontage* AnimationToPlay = GetIsBlocking() ? HitInBlockReactionAnimation : HitReactionAnimation;
+
+        AnimInstance->Montage_Play(AnimationToPlay);
+
+        FOnMontageEnded EndDelegate;
+        EndDelegate.BindUObject(this, &UGOJCombatComponent::OnHitMontageEnded);
+        AnimInstance->Montage_SetEndDelegate(EndDelegate, AnimationToPlay);
     }
 }
 
@@ -102,12 +119,17 @@ FStrikeInfo UGOJCombatComponent::GetStrikeInfo(EStrikeType StrikeType)
 
 void UGOJCombatComponent::StartBlocking()
 {
-    if (!BlockAnimation) return;
+    if (!BlockAnimation || !GetCanBlock() || GetIsBlocking()) return;  
 
     const auto BaseCharacter = GetGOJBaseCharacter();
     if (!BaseCharacter) return;
 
     BaseCharacter->SetCanWalk(false);
+
+    const auto StaminaComponent = GetGOJStaminaComponent();
+    if (!StaminaComponent) return;
+
+    StaminaComponent->SetStaminaAutoRegen(false);
 
     const auto SkeletalMeshComponent = GetCharacterSkeletalMeshComponent();
     if (!SkeletalMeshComponent) return;
@@ -118,20 +140,31 @@ void UGOJCombatComponent::StartBlocking()
     const auto AnimInstance = SkeletalMeshComponent->GetAnimInstance();
     if (AnimInstance)
     {
-        UE_LOG(LogGOJCombatComponent, Display, TEXT("Blocking animation started"));
-        AnimInstance->Montage_Play(BlockAnimation, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+        if (!AnimInstance->Montage_IsPlaying(BlockAnimation))
+        {
+            AnimInstance->Montage_Play(BlockAnimation, 1.0f, EMontagePlayReturnType::Duration, 0.0f, true);
+            UE_LOG(LogGOJCombatComponent, Display, TEXT("Blocking animation started"));
+        }
     }
 }
 
 void UGOJCombatComponent::StopBlocking()
 {
-    if (!BlockAnimation) return;
+    if (!BlockAnimation || !GetIsBlocking()) return;
 
     const auto SkeletalMeshComponent = GetCharacterSkeletalMeshComponent();
     if (!SkeletalMeshComponent) return;
 
     const auto BaseCharacter = GetGOJBaseCharacter();
     if (!BaseCharacter) return;
+
+    const auto StaminaComponent = GetGOJStaminaComponent();
+    if (!StaminaComponent) return;
+
+    StaminaComponent->SetStaminaAutoRegen(true);
+
+    UE_LOG(LogGOJCombatComponent, Display, TEXT("Stamina auto regen: %s"),
+        StaminaComponent->GetAutoStaminaRegen() ? TEXT("True") : TEXT("False"));
 
     SetIsBlocking(false);
     SetCanMakeHit(true);
@@ -140,8 +173,8 @@ void UGOJCombatComponent::StopBlocking()
     const auto AnimInstance = SkeletalMeshComponent->GetAnimInstance();
     if (AnimInstance && AnimInstance->Montage_IsPlaying(BlockAnimation))
     {
-        UE_LOG(LogGOJCombatComponent, Display, TEXT("Blocking animation stopped"));
         AnimInstance->Montage_Stop(0.2f, BlockAnimation);
+        UE_LOG(LogGOJCombatComponent, Display, TEXT("Blocking animation stopped"));
     }
 }
 
@@ -159,4 +192,46 @@ AGOJBaseCharacter* UGOJCombatComponent::GetGOJBaseCharacter()
     if (!Character) return nullptr;
 
     return Cast<AGOJBaseCharacter>(Character);
+}
+
+void UGOJCombatComponent::OnHitMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+    if (!Montage) return;
+
+    const auto BaseCharacter = GetGOJBaseCharacter();
+    if (!BaseCharacter) return;
+
+    const auto CombatComponent = BaseCharacter->FindComponentByClass<UGOJCombatComponent>();
+    if (!CombatComponent) return;
+
+    const auto StaminaComponent = BaseCharacter->FindComponentByClass<UGOJStaminaComponent>();
+    if (!StaminaComponent) return;
+
+    SetIsUnderHit(false); 
+
+    StaminaComponent->SetStaminaAutoRegen(true);
+
+    if (Montage == HitInBlockReactionAnimation)
+    {
+        CombatComponent->SetCanBlock(true);
+        SetIsBlocking(false);
+        CombatComponent->StartBlocking();  
+    }
+    else if (Montage == HitReactionAnimation)
+    {
+        BaseCharacter->SetCanWalk(true);
+        CombatComponent->SetCanMakeHit(true);
+        CombatComponent->SetCanBlock(true);
+    }
+}
+
+UGOJStaminaComponent* UGOJCombatComponent::GetGOJStaminaComponent()
+{
+    const auto Character = GetOwner();
+    if (!Character) return nullptr;
+
+    const auto BaseCharacter = Cast<AGOJBaseCharacter>(Character);
+    if (!BaseCharacter) return nullptr;
+
+    return BaseCharacter->FindComponentByClass<UGOJStaminaComponent>();
 }
