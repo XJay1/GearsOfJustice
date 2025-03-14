@@ -41,6 +41,11 @@ void UGOJHealthComponent::OnTakeAnyDamage(
 {
     if (GetIsDead() || !GetWorld()) return;
 
+    const auto CombatComponent = GetGOJCombatComponent();
+    if (!CombatComponent) return;
+
+    CombatComponent->SetZeroHitsWithoutDamageCount();
+
     SetHealth(Health - Damage);
 
     if (GetIsDead())

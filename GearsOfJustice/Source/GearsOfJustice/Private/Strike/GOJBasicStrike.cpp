@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Strike/GOJBasicStrike.h"
 #include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -9,28 +8,22 @@
 #include "Components/GOJHealthComponent.h"
 #include "Components/GOJCombatComponent.h"
 
-
 DEFINE_LOG_CATEGORY_STATIC(LogBaseStrike, All, All);
 
 AGOJBasicStrike::AGOJBasicStrike()
 {
-
-	PrimaryActorTick.bCanEverTick = true;
-
+    PrimaryActorTick.bCanEverTick = true;
     EndDelegate.BindUObject(this, &AGOJBasicStrike::OnAnimationEnded);
-
 }
 
 void AGOJBasicStrike::BeginPlay()
 {
-	Super::BeginPlay();
-	
+    Super::BeginPlay();
 }
 
 void AGOJBasicStrike::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
-
+    Super::Tick(DeltaTime);
 }
 
 void AGOJBasicStrike::ExecuteStrike(ACharacter* Character)
@@ -42,17 +35,13 @@ void AGOJBasicStrike::ExecuteStrike(ACharacter* Character)
     if (!StaminaComponent) return;
 
     StaminaComponent->IncreaseStamina(StrikeInfo.RequiredStamina);
-
-    
-
     PlayAttackAnimation(StrikeInfo.StrikeAnimation, CurrentCharacter);
     ApplyDamageToHitCharacters();
 }
 
-
 void AGOJBasicStrike::PlayAttackAnimation(UAnimMontage* Animation, ACharacter* Character)
 {
-    if (!CanMakeStrike || !Animation ) return;
+    if (!CanMakeStrike || !Animation) return;
 
     CanMakeStrike = false;
 
@@ -64,7 +53,6 @@ void AGOJBasicStrike::PlayAttackAnimation(UAnimMontage* Animation, ACharacter* C
     if (!CombatComponent || !CombatComponent->GetCanMakeHit()) return;
 
     const USkeletalMeshComponent* Mesh = Character->GetMesh();
-
     if (!Mesh) return;
 
     BaseCharacter->LockAllActions();
@@ -90,7 +78,6 @@ void AGOJBasicStrike::OnAnimationEnded(UAnimMontage* Montage, bool bInterrupted)
         if (CombatComponent)
         {
             CombatComponent->SetCanBlock(true);
-            
         }
         CanMakeStrike = false;
         CurrentCharacter = nullptr;
@@ -108,8 +95,13 @@ bool AGOJBasicStrike::IsEnoughStamina()
 UGOJStaminaComponent* AGOJBasicStrike::GetStaminaComponent()
 {
     if (!CurrentCharacter) return nullptr;
-
     return CurrentCharacter->FindComponentByClass<UGOJStaminaComponent>();
+}
+
+UGOJCombatComponent* AGOJBasicStrike::GetCombatComponent()
+{
+    if (!CurrentCharacter) return nullptr;
+    return CurrentCharacter->FindComponentByClass<UGOJCombatComponent>();
 }
 
 void AGOJBasicStrike::ApplyDamageToHitCharacters()
@@ -135,13 +127,16 @@ void AGOJBasicStrike::ApplyDamageToHitCharacters()
         if (!StaminaComponent) return;
 
         const auto CombatComponent = HitActor->FindComponentByClass<UGOJCombatComponent>();
-        if (!StaminaComponent) return;
-        
+        if (!CombatComponent) return;
+
         UGOJHealthComponent* HealthComponent = HitActor->FindComponentByClass<UGOJHealthComponent>();
         if (!HealthComponent) return;
 
         if (!HealthComponent->GetIsDead())
         {
+            CombatComponent->IncreaseHitsWithoutDamageCount();
+            float DamageCount = CalculateDamage();
+
             if (CombatComponent && CombatComponent->HitReactionAnimation && !HealthComponent->GetIsDead())
             {
                 CombatComponent->PlayHitReaction();
@@ -149,19 +144,71 @@ void AGOJBasicStrike::ApplyDamageToHitCharacters()
 
             if (CombatComponent->GetIsBlocking() && StaminaComponent->GetStamina() >= StrikeInfo.Damage)
             {
-                StaminaComponent->IncreaseStamina(StrikeInfo.Damage);
+                float BlockCoast = CalculateBlockCost(DamageCount);
+                float Block = CalculateBlock();
+                StaminaComponent->IncreaseStamina(BlockCoast);
+
+                DamageCount = DamageCount * (1 - Block);
+                HealthComponent->OnTakeAnyDamage(HitActor, DamageCount, nullptr, nullptr, CurrentCharacter);
             }
             else
             {
                 CombatComponent->StopBlocking();
-                HealthComponent->OnTakeAnyDamage(HitActor, StrikeInfo.Damage, nullptr, nullptr, CurrentCharacter);
+                HealthComponent->OnTakeAnyDamage(HitActor, DamageCount, nullptr, nullptr, CurrentCharacter);
             }
-
-            
         }
         if (HealthComponent->GetIsDead())
         {
             HealthComponent->OnDeath.Broadcast();
         }
     }
+}
+
+float AGOJBasicStrike::CalculateBlockCost(float Damage)
+{
+    float Block = CalculateBlock();
+
+    return (Damage + Block) / 2;
+}
+
+float AGOJBasicStrike::CalculateBlock()
+{
+    const auto StaminaComponent = GetStaminaComponent();
+    if (!StaminaComponent) return 0;
+
+    return 0.5 + 0.5 * (StaminaComponent->GetStamina() / StaminaComponent->GetMaxStamina());
+}
+
+float AGOJBasicStrike::CalculateDamage()
+{
+    float Protection = 1.0f;
+    const auto CombatComponent = GetCombatComponent();
+    if (CombatComponent) Protection = CombatComponent->GetCharacterProtection();
+
+    return StrikeInfo.Damage * Protection * CalculateFatigue() * CalcualateComboMultiple() * CalculateCrit() * CalcuateRandModifier();
+}
+
+float AGOJBasicStrike::CalculateFatigue()
+{
+    const auto StaminaComponent = GetStaminaComponent();
+    if (!StaminaComponent) return FatigueBase;
+    return FatigueBase + FatigueScale * (StaminaComponent->GetStamina() / StaminaComponent->GetMaxStamina());
+}
+
+float AGOJBasicStrike::CalcualateComboMultiple()
+{
+    const auto CombatComponent = GetCombatComponent();
+    if (!CombatComponent) return ComboBase;
+    return ComboBase + ComboScale * CombatComponent->GetHitsWithoutDamageCount();
+}
+
+float AGOJBasicStrike::CalculateCrit()
+{
+    float RandomValue = FMath::RandRange(0.0f, 100.0f);
+    return (RandomValue < StrikeInfo.CritChance) ? CritMultiplier : 1.0f;
+}
+
+float AGOJBasicStrike::CalcuateRandModifier()
+{
+    return FMath::RandRange(RandModMin, RandModMax);
 }

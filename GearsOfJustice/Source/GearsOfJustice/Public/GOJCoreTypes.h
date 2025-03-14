@@ -26,6 +26,9 @@ struct FStrikeInfo
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strike")
     float HitRange;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strike", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float CritChance;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Strike")
     UAnimMontage* StrikeAnimation;
 };

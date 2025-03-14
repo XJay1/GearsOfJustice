@@ -33,6 +33,8 @@ public:
 
     bool HasEnoughStamina(float RequiredStamina) const { return Stamina >= RequiredStamina; }
 
+    float GetMaxStamina() { return MaxStamina; }
+
 protected:
     virtual void BeginPlay() override;
 

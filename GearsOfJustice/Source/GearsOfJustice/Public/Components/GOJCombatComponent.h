@@ -42,6 +42,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
     UAnimMontage* HitInBlockReactionAnimation;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (ClampMax = "1.2", ClampMin = "0.5"))
+    float CharacterProtection = 0.5;
+
+
     void PerformStrike(EStrikeType StrikeType);
 
     void PlayHitReaction();
@@ -63,11 +67,21 @@ public:
     bool GetIsUnderHit() const { return bIsUnderHit; }
     void SetIsUnderHit(bool IsUnderHit) { bIsUnderHit = IsUnderHit; }
 
+    float GetCharacterProtection() const { return CharacterProtection; }
+    void SetCharacterProtection(float characterProtection) { CharacterProtection = characterProtection; }
+
+    int32 GetHitsWithoutDamageCount() { return HitsWithoutDamageCount; }
+
+    void IncreaseHitsWithoutDamageCount() { HitsWithoutDamageCount++; }
+    void SetZeroHitsWithoutDamageCount() { HitsWithoutDamageCount = 0; }
+
 private:
     bool bIsBlocking = false;
     bool bCanMakeHit = true;
     bool bCanBlock = true;
     bool bIsUnderHit = false;
+     
+    int32 HitsWithoutDamageCount = 0;
 
     USkeletalMeshComponent* GetCharacterSkeletalMeshComponent();
     AGOJBaseCharacter* GetGOJBaseCharacter();

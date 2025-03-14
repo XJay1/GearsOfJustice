@@ -9,6 +9,7 @@
 
 class AGOJBaseCharacter;
 class UGOJStaminaComponent;
+class UGOJCombatComponent;
 
 UCLASS()
 class GEARSOFJUSTICE_API AGOJBasicStrike : public AActor
@@ -21,12 +22,42 @@ public:
     bool GetCanWalk() const { return CanWalk; }
     bool GetCanMakeStrike() const { return CanMakeStrike; }
 
-    FStrikeInfo GetStrikeInfo() const { return StrikeInfo;  }
+    FStrikeInfo GetStrikeInfo() const { return StrikeInfo; }
 
     void ExecuteStrike(ACharacter* InstigatorCharacter);
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Strike")
     FStrikeInfo StrikeInfo;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    float FatigueBase = 0.5f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    float FatigueScale = 0.5f;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    float ComboBase = 1.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    float ComboScale = 0.05f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    float CritMultiplier = 1.5f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    float RandModMin = 0.9f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    float RandModMax = 1.1f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat") 
+    float BlockBase = 0.5f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    float BlockScale = 0.3f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat") 
+    float BlockCostMultiplier = 1.2f;
+
 
 protected:
     virtual void BeginPlay() override;
@@ -45,5 +76,15 @@ private:
     void OnAnimationEnded(UAnimMontage* Montage, bool bInterrupted);
     bool IsEnoughStamina();
     UGOJStaminaComponent* GetStaminaComponent();
+    UGOJCombatComponent* GetCombatComponent();
     void ApplyDamageToHitCharacters();
+
+    float CalculateBlockCost(float Damage);
+    float CalculateBlock();
+    float CalculateDamage();
+    float CalculateFatigue();
+    float CalcualateComboMultiple();
+    float CalculateCrit();
+    float CalcuateRandModifier();
+
 };
