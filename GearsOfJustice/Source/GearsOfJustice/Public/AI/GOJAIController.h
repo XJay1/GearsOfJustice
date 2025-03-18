@@ -14,12 +14,12 @@ class GEARSOFJUSTICE_API AGOJAIController : public AAIController
 public:
     AGOJAIController();
 
-protected:
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-    UBehaviorTree* BehaviorTree;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI")
-    UBlackboardComponent* BlackboardComponent;
-
     virtual void OnPossess(APawn* InPawn) override;
+
+    void SetCombatState(bool bInCombat);  
+
+private:
+    bool bIsInCombat = false;
+
+   
 };

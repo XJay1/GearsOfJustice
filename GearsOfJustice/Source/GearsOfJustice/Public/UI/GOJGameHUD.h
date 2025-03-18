@@ -18,7 +18,13 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> CombatHUDWidgetClass;
 
+    UPROPERTY()
+    UUserWidget* CombatWidget;
+
     virtual void BeginPlay() override;
 
-
+public:
+    // Функции для отображения и скрытия виджета
+    void ShowCombatHUD();
+    void HideCombatHUD();
 };

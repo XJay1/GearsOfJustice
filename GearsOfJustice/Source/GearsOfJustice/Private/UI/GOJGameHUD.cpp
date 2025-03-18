@@ -7,9 +7,26 @@
 void AGOJGameHUD::BeginPlay()
 {
     Super::BeginPlay();
-    auto CombatHUDWidget = CreateWidget<UUserWidget>(GetOwningPlayerController(), CombatHUDWidgetClass);
-    if (CombatHUDWidget)
+    CombatWidget = CreateWidget<UUserWidget>(GetOwningPlayerController(), CombatHUDWidgetClass);
+    if (CombatWidget)
     {
-        CombatHUDWidget->AddToViewport();
+        CombatWidget->AddToViewport();
+        CombatWidget->SetVisibility(ESlateVisibility::Hidden);
+    }
+}
+
+void AGOJGameHUD::ShowCombatHUD()
+{
+    if (CombatWidget)
+    {
+        CombatWidget->SetVisibility(ESlateVisibility::Visible);  // Добавляем виджет на экран
+    }
+}
+
+void AGOJGameHUD::HideCombatHUD()
+{
+    if (CombatWidget && CombatWidget->IsInViewport())
+    {
+        CombatWidget->SetVisibility(ESlateVisibility::Hidden);
     }
 }

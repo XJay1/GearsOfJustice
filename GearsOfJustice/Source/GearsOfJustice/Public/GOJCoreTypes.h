@@ -42,5 +42,13 @@ enum class EStrikeType : uint8
     None UMETA(DisplayName = "None")
 };
 
+// State
+UENUM(BlueprintType)
+enum class ECharacterState : uint8
+{
+    Exploring UMETA(DisplayName = "Exploring"),
+    Combat UMETA(DisplayName = "Combat")
+};
+
 // Animation
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnNotifiedSignature, USkeletalMeshComponent*);

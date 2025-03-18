@@ -54,6 +54,7 @@ void AGOJBaseCharacter::BeginPlay()
     StaminaComponent->OnStaminaChangedDelegate.AddUObject(this, &AGOJBaseCharacter::OnStaminaChanged);
 
     FOnDeadAnimationEnded.BindUObject(this, &AGOJBaseCharacter::OnDeathMontageEnded);
+    SetCharacterState(ECharacterState::Exploring);
 
     Super::BeginPlay();
 }
@@ -84,11 +85,10 @@ void AGOJBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
     PlayerInputComponent->BindAxis("MoveRight", this, &AGOJBaseCharacter::MoveRight);
     PlayerInputComponent->BindAxis("TurnAround", this, &AGOJBaseCharacter::TurnAround);
 
-    PlayerInputComponent->BindAction("EasyPunch", IE_Pressed, this, &AGOJBaseCharacter::EasyPunch);
-    PlayerInputComponent->BindAction("Kick", IE_Pressed, this, &AGOJBaseCharacter::Kick);
-    PlayerInputComponent->BindAction("StrongPunch", IE_Pressed, this, &AGOJBaseCharacter::StrongPunch);
-    PlayerInputComponent->BindAction("Block", IE_Pressed, this, &AGOJBaseCharacter::OnStartBlocking);
-    PlayerInputComponent->BindAction("Block", IE_Released, this, &AGOJBaseCharacter::OnStopBlocking);
+    if (CharacterState == ECharacterState::Combat)
+    {
+        BindCombatAction();
+    }
 }
 
 void AGOJBaseCharacter::MoveForward(float AxisValue)
@@ -111,6 +111,7 @@ void AGOJBaseCharacter::MoveCharacter(float AxisValue, EAxis::Type Axis)
     const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(Axis);
     AddMovementInput(Direction, AxisValue);
 }
+
 
 void AGOJBaseCharacter::TurnAround(float AxisValue)
 {
@@ -263,4 +264,48 @@ void AGOJBaseCharacter::UnlockAllActions()
 {
     SetCanWalk(true);
     CombatComponent->SetCanMakeHit(true);
+}
+
+
+void AGOJBaseCharacter::SetCharacterState(ECharacterState NewState) 
+{
+    if (CharacterState == NewState) return;
+
+    CharacterState = NewState;
+
+    if (CharacterState == ECharacterState::Combat)
+    {
+        BindCombatAction();
+        
+    }
+    else
+    {
+        UnbindCombatAction();
+    }
+
+    UE_LOG(GOJBaseCharacterLog, Warning, TEXT("Character state changed to: %s"), *UEnum::GetValueAsString(CharacterState));
+}
+
+void AGOJBaseCharacter::BindCombatAction()
+{
+    if (!InputComponent) return;
+
+    InputComponent->BindAction("EasyPunch", IE_Pressed, this, &AGOJBaseCharacter::EasyPunch);
+    InputComponent->BindAction("Kick", IE_Pressed, this, &AGOJBaseCharacter::Kick);
+    InputComponent->BindAction("StrongPunch", IE_Pressed, this, &AGOJBaseCharacter::StrongPunch);
+    InputComponent->BindAction("Block", IE_Pressed, this, &AGOJBaseCharacter::OnStartBlocking);
+    InputComponent->BindAction("Block", IE_Released, this, &AGOJBaseCharacter::OnStopBlocking);
+
+    UE_LOG(GOJBaseCharacterLog, Warning, TEXT("Combat actions bound."));
+}
+
+void AGOJBaseCharacter::UnbindCombatAction()
+{
+    if (!InputComponent) return;
+
+    InputComponent->RemoveActionBinding("EasyPunch", IE_Pressed);
+    InputComponent->RemoveActionBinding("Kick", IE_Pressed);
+    InputComponent->RemoveActionBinding("StrongPunch", IE_Pressed);
+
+    UE_LOG(GOJBaseCharacterLog, Warning, TEXT("Combat actions unbound."));
 }

@@ -29,6 +29,11 @@ protected:
     void TurnAround(float AxisValue);
     void MoveCharacter(float AxisValue, EAxis::Type Axis);
 
+    void BindCombatAction();
+    void UnbindCombatAction();
+
+    
+
     void PerformStrikeByStrikeType(EStrikeType StrikeType);
 
     void OnHealthChanged(float Health, float HealthDelta);
@@ -51,7 +56,6 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     UGOJStaminaComponent* StaminaComponent;
-
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     UGOJCombatComponent* CombatComponent;
@@ -81,11 +85,13 @@ public:
 
     void LockAllActions();
     void UnlockAllActions();
+    void SetCharacterState(ECharacterState NewState);
 
 private:
     bool bCanWalk = true;
 
     FOnMontageEnded FOnDeadAnimationEnded;
+    ECharacterState CharacterState = ECharacterState::Exploring;
 
     FText GetDevData(float HelthPercent, float StaminaPercent);
     void EnableRagdoll();
