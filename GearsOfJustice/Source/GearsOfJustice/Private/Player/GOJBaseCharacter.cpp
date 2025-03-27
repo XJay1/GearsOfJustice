@@ -155,7 +155,6 @@ void AGOJBaseCharacter::OnStopBlocking()
 
 void AGOJBaseCharacter::OnDeath()
 {
-
     if (UCapsuleComponent* CurrentCapsuleComponent = GetCapsuleComponent())
     {
         CurrentCapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -171,12 +170,17 @@ void AGOJBaseCharacter::OnDeath()
         Movement->DisableMovement();
     }
 
-    if (Controller)
+    if (APlayerController* PC = Cast<APlayerController>(Controller))  
     {
-        Controller->SetIgnoreMoveInput(true);
-        Controller->SetIgnoreLookInput(true);
+        PC->SetIgnoreMoveInput(true);
+        PC->SetIgnoreLookInput(true);
+
+        PC->bShowMouseCursor = true; 
+        FInputModeUIOnly InputMode;
+        PC->SetInputMode(InputMode);
     }
 }
+
 
 void AGOJBaseCharacter::PerformStrikeByStrikeType(EStrikeType StrikeType)
 {

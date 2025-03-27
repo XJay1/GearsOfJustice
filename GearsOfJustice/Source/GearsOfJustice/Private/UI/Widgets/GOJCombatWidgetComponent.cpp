@@ -30,10 +30,31 @@ bool UGOJCombatWidgetComponent::Initialize()
     return Super::Initialize();
 }
 
+bool UGOJCombatWidgetComponent::IsPlayerAlive() const
+{
+    const auto HealthComponent = GetGOJHealthComponent();
+    if (!HealthComponent) return false;
+
+    return !HealthComponent->GetIsDead();
+}
+
+
+
 void UGOJCombatWidgetComponent::OnHealthChanged(float Health, float Delta)
 {
     if (Delta < 0)  
     {
         OnTakeDamage();  
     }
+}
+
+UGOJHealthComponent* UGOJCombatWidgetComponent::GetGOJHealthComponent() const
+{
+    const auto Player = GetOwningPlayerPawn();
+    if (!Player) return nullptr;
+
+    const auto BasePlayer = Cast<AGOJBaseCharacter>(Player);
+    if (!BasePlayer) return nullptr;
+
+    return BasePlayer->FindComponentByClass<UGOJHealthComponent>();
 }
