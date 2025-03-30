@@ -24,7 +24,6 @@ protected:
     virtual void BeginPlay() override;
 
 public:
-    // Функции для отображения и скрытия виджета
     void ShowCombatHUD();
     void HideCombatHUD();
 };

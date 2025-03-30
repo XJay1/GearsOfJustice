@@ -6,7 +6,8 @@
 #include "BrainComponent.h"
 #include "EngineUtils.h"  
 #include "GOJGameHUD.h"
-#include "UI/Widgets/GOJCombatWidgetComponent.h" // !!! Важно для работы с AIController
+#include "Components/GOJHealthComponent.h"
+#include "UI/Widgets/GOJCombatWidgetComponent.h" 
 
 AGOJCombatZoneTrigger::AGOJCombatZoneTrigger()
 {
@@ -36,18 +37,15 @@ void AGOJCombatZoneTrigger::OnEnterCombatZone(UPrimitiveComponent* OverlappedCom
     {
         Character->SetCharacterState(ECharacterState::Combat);
 
-        // Получаем контроллер игрока
         if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
         {
-            // Получаем HUD
             AGOJGameHUD* GameHUD = Cast<AGOJGameHUD>(PlayerController->GetHUD());
             if (GameHUD)
             {
-                GameHUD->ShowCombatHUD();  // Показываем виджет
+                GameHUD->ShowCombatHUD();  
             }
         }
 
-        // Активируем ИИ
         for (TActorIterator<AGOJAICharacter> It(GetWorld()); It; ++It)
         {
             AGOJAICharacter* AICharacter = *It;
@@ -70,18 +68,25 @@ void AGOJCombatZoneTrigger::OnExitCombatZone(
     {
         Character->SetCharacterState(ECharacterState::Exploring);
 
-        // Получаем контроллер игрока
+        const auto HealthComponent = Character->GetComponentByClass<UGOJHealthComponent>();
+        if (!HealthComponent) return;
+
         if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
         {
-            // Получаем HUD
             AGOJGameHUD* GameHUD = Cast<AGOJGameHUD>(PlayerController->GetHUD());
             if (GameHUD)
             {
-                GameHUD->HideCombatHUD();  // Скрываем виджет
+                if (HealthComponent->GetIsDead())
+                {
+
+                }
+                else
+                {
+                    GameHUD->HideCombatHUD();
+                }
             }
         }
 
-        // Останавливаем ИИ
         for (TActorIterator<AGOJAICharacter> It(GetWorld()); It; ++It)
         {
             AGOJAICharacter* AICharacter = *It;

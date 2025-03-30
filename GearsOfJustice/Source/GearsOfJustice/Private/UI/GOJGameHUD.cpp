@@ -19,7 +19,7 @@ void AGOJGameHUD::ShowCombatHUD()
 {
     if (CombatWidget)
     {
-        CombatWidget->SetVisibility(ESlateVisibility::Visible);  // Добавляем виджет на экран
+        CombatWidget->SetVisibility(ESlateVisibility::Visible);  
     }
 }
 
@@ -30,3 +30,4 @@ void AGOJGameHUD::HideCombatHUD()
         CombatWidget->SetVisibility(ESlateVisibility::Hidden);
     }
 }
+

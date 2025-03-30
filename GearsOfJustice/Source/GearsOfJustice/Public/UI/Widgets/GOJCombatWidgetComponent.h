@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "GOJCombatWidgetComponent.generated.h"
 
+class UGOJHealthComponent;
+
 UCLASS()
 class GEARSOFJUSTICE_API UGOJCombatWidgetComponent : public UUserWidget
 {
@@ -17,6 +19,13 @@ public:
     UFUNCTION(BlueprintImplementableEvent)
     void OnTakeDamage();
 
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    bool IsPlayerAlive() const;
+
+    void OnDead();
+
 private:
     void OnHealthChanged(float Health, float Delta);
+
+    UGOJHealthComponent* GetGOJHealthComponent() const;
 };
