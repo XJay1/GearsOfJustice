@@ -155,6 +155,11 @@ void AGOJBaseCharacter::OnStopBlocking()
 
 void AGOJBaseCharacter::OnDeath()
 {
+    if (CombatComponent->GetIsBlocking())
+    {
+        CombatComponent->StopBlocking();
+    }
+
     if (UCapsuleComponent* CurrentCapsuleComponent = GetCapsuleComponent())
     {
         CurrentCapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);

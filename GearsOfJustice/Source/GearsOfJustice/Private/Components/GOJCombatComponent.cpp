@@ -7,6 +7,7 @@
 #include "Strike/GOJEasyPunch.h"
 #include "Strike/GOJStrongPunch.h"
 #include "Strike/GOJKick.h"
+#include "Components/GOJHealthComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGOJCombatComponent, All, All);
 
@@ -131,6 +132,9 @@ void UGOJCombatComponent::StartBlocking()
 
     StaminaComponent->SetStaminaAutoRegen(false);
 
+    const auto HealthComponent = GetGOJHealthComponent();
+    if (!HealthComponent || HealthComponent->GetIsDead()) return;
+
     const auto SkeletalMeshComponent = GetCharacterSkeletalMeshComponent();
     if (!SkeletalMeshComponent) return;
 
@@ -234,4 +238,15 @@ UGOJStaminaComponent* UGOJCombatComponent::GetGOJStaminaComponent()
     if (!BaseCharacter) return nullptr;
 
     return BaseCharacter->FindComponentByClass<UGOJStaminaComponent>();
+}
+
+UGOJHealthComponent* UGOJCombatComponent::GetGOJHealthComponent()
+{
+    const auto Character = GetOwner();
+    if (!Character) return nullptr;
+
+    const auto BaseCharacter = Cast<AGOJBaseCharacter>(Character);
+    if (!BaseCharacter) return nullptr;
+
+    return BaseCharacter->FindComponentByClass<UGOJHealthComponent>();
 }

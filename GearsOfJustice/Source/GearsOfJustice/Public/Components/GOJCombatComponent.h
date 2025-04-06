@@ -10,6 +10,7 @@
 class AGOJBasicStrike;
 class AGOJBaseCharacter;
 class UGOJStaminaComponent;
+class UGOJHealthComponent;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class GEARSOFJUSTICE_API UGOJCombatComponent : public UActorComponent
@@ -86,6 +87,8 @@ private:
     USkeletalMeshComponent* GetCharacterSkeletalMeshComponent();
     AGOJBaseCharacter* GetGOJBaseCharacter();
     UGOJStaminaComponent* GetGOJStaminaComponent();
+    UGOJHealthComponent* GetGOJHealthComponent();
+
     UFUNCTION()
     void OnHitMontageEnded(UAnimMontage* Montage, bool bInerrupted);
 };
