@@ -33,6 +33,8 @@ void AGOJCombatZoneTrigger::BeginPlay()
 void AGOJCombatZoneTrigger::OnEnterCombatZone(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
     int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+    if (bIsBattleOver) return;
+
     if (AGOJBaseCharacter* Character = Cast<AGOJBaseCharacter>(OtherActor))
     {
         Character->SetCharacterState(ECharacterState::Combat);
@@ -66,6 +68,30 @@ void AGOJCombatZoneTrigger::OnExitCombatZone(
 {
     if (AGOJBaseCharacter* Character = Cast<AGOJBaseCharacter>(OtherActor))
     {
+        for (TActorIterator<AGOJAICharacter> It(GetWorld()); It; ++It)
+        {
+            AGOJAICharacter* AICharacter = *It;
+            if (AICharacter)
+            {
+                AGOJAIController* AIController = Cast<AGOJAIController>(AICharacter->GetController());
+                if (AIController && AIController->BrainComponent)
+                {
+                    AGOJAICharacter* ControlledAICharacter = Cast<AGOJAICharacter>(AIController->GetPawn());
+                    if (!ControlledAICharacter) return;
+
+                    const auto AIHealthComponent = ControlledAICharacter->GetComponentByClass<UGOJHealthComponent>();
+                    if (!AIHealthComponent) return;
+
+                    if (AIHealthComponent->GetIsDead())
+                    {
+                        bIsBattleOver = true;
+                    }
+
+                    AIController->BrainComponent->StopLogic(TEXT("Player left combat zone"));
+                }
+            }
+        }
+
         Character->SetCharacterState(ECharacterState::Exploring);
 
         const auto HealthComponent = Character->GetComponentByClass<UGOJHealthComponent>();
@@ -87,17 +113,6 @@ void AGOJCombatZoneTrigger::OnExitCombatZone(
             }
         }
 
-        for (TActorIterator<AGOJAICharacter> It(GetWorld()); It; ++It)
-        {
-            AGOJAICharacter* AICharacter = *It;
-            if (AICharacter)
-            {
-                AGOJAIController* AIController = Cast<AGOJAIController>(AICharacter->GetController());
-                if (AIController && AIController->BrainComponent)
-                {
-                    AIController->BrainComponent->StopLogic(TEXT("Player left combat zone"));
-                }
-            }
-        }
+        
     }
 }

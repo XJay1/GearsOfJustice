@@ -22,6 +22,8 @@ protected:
     virtual void BeginPlay() override;
 
 private:
+    bool bIsBattleOver = false;
+
     UPROPERTY(VisibleAnywhere, Category = "Components")
     UBoxComponent* TriggerBox;
 
