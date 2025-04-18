@@ -30,7 +30,7 @@ void UGOJMenuSelectorWidget::NativeOnInitialized()
 
 void UGOJMenuSelectorWidget::OnContinueGame()
 {
-    const FName StartupLevelName = "TopDownMap";
+    const FName StartupLevelName = "PersistentLevel";
     UGameplayStatics::OpenLevel(this, StartupLevelName);
 }
 
